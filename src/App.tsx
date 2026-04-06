@@ -6,22 +6,45 @@ import { ExpensesPage } from './components/ExpensesPage'
 import { Footer } from './components/Footer'
 import { Header } from './components/Header'
 import { HomePage } from './components/HomePage'
+import { LoadingScreen } from './components/LoadingScreen'
 import { supabase } from './lib/supabase'
 
 type AccessState = 'loading' | 'signed_out' | 'checking' | 'approved' | 'denied' | 'error'
 type NavKey = 'home' | 'calendar' | 'expenses'
 
 type Member = {
+  id: number | string
   first_name: string | null
   last_name: string | null
   role: string | null
+}
+
+const pathToPage = (pathname: string): NavKey => {
+  if (pathname === '/calendar') return 'calendar'
+  if (pathname === '/expenses') return 'expenses'
+  return 'home'
+}
+
+const pageToPath = (page: NavKey) => {
+  if (page === 'calendar') return '/calendar'
+  if (page === 'expenses') return '/expenses'
+  return '/'
 }
 
 export default function App() {
   const [accessState, setAccessState] = useState<AccessState>('loading')
   const [member, setMember] = useState<Member | null>(null)
   const [email, setEmail] = useState('')
-  const [activePage, setActivePage] = useState<NavKey>('home')
+  const [activePage, setActivePage] = useState<NavKey>(() => pathToPage(window.location.pathname))
+
+  useEffect(() => {
+    const onPopState = () => {
+      setActivePage(pathToPage(window.location.pathname))
+    }
+
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
 
   useEffect(() => {
     if (!supabase) {
@@ -35,7 +58,7 @@ export default function App() {
       if (!session?.user.email) {
         setMember(null)
         setEmail('')
-        setActivePage('home')
+        setActivePage(pathToPage(window.location.pathname))
         setAccessState('signed_out')
         return
       }
@@ -46,7 +69,7 @@ export default function App() {
 
       const { data, error } = await client
         .from('users')
-        .select('first_name, last_name, role')
+        .select('id, first_name, last_name, role')
         .eq('email', userEmail)
         .eq('is_active', true)
         .maybeSingle()
@@ -95,15 +118,24 @@ export default function App() {
   const signOut = async () => {
     if (!supabase) return
     await supabase.auth.signOut()
+    window.history.replaceState(null, '', '/')
+  }
+
+  const navigate = (page: NavKey) => {
+    setActivePage(page)
+    window.history.pushState(null, '', pageToPath(page))
   }
 
   const renderPage = () => {
-    if (activePage === 'calendar') return <CalendarPage />
+    if (activePage === 'calendar') {
+      return <CalendarPage memberId={member?.id ? String(member.id) : ''} memberName={memberName} />
+    }
     if (activePage === 'expenses') return <ExpensesPage />
     return <HomePage member={member} />
   }
 
   const isSignedIn = accessState === 'approved'
+  const isAuthLoading = accessState === 'loading' || accessState === 'checking'
 
   return (
     <div className="min-h-screen bg-[#0f1714] text-stone-100">
@@ -116,13 +148,15 @@ export default function App() {
             activePage={activePage}
             isSignedIn={isSignedIn}
             memberName={memberName}
-            onNavigate={setActivePage}
+            onNavigate={navigate}
             onSignOut={signOut}
             role={member?.role}
           />
 
           <main className="mx-auto flex w-full max-w-6xl flex-1 px-5 py-10 sm:px-8 sm:py-14">
-            {isSignedIn ? (
+            {isAuthLoading ? (
+              <LoadingScreen label="Checking access" />
+            ) : isSignedIn ? (
               <div className="w-full">{renderPage()}</div>
             ) : (
               <div className="grid w-full items-start gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">

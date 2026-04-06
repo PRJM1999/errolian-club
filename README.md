@@ -1,131 +1,419 @@
 # Errolian Club
 
-Minimal private members app for the Errolian Club.
+A private members application for the Errolian Club, built with React, Vite, Tailwind, and Supabase.
 
-Current priority: a clean Google sign-in flow where only approved members in Supabase can enter.
+The project is deliberately simple in structure but production-minded in approach:
 
-## Stack
+- Google sign-in through Supabase Auth
+- access controlled by the existing `public.users` table
+- leave management stored in Supabase Postgres
+- Google Sheets retained only for read-only use where needed
+- fast deployment via Vercel
 
-- Vite + React
+## Overview
+
+The application is designed around a straightforward rule: members authenticate with Google, and only approved users in the database are allowed through the gate.
+
+Once signed in, members enter a lightweight portal with three core areas:
+
+- `Home`
+- `Calendar`
+- `Expenses`
+
+At the moment, the `Calendar` page is the most complete feature. It reads leave entries from Supabase, renders a month view, shows upcoming leave across the club, and allows members to add and delete their own leave entries.
+
+## Product Goals
+
+This codebase is aiming for a balance that is common in strong internal products and operational tools:
+
+- simple enough to maintain without ceremony
+- clean enough to scale without rewrite panic
+- explicit enough to onboard someone new quickly
+- robust enough for real-world member usage
+
+In practice, that means:
+
+- minimal routing complexity
+- small number of components
+- clear data ownership
+- no spreadsheet-style write workflows for core app data
+
+## Architecture
+
+### High Level
+
+```mermaid
+flowchart LR
+    U[Member] --> G[Google OAuth]
+    G --> SA[Supabase Auth]
+    SA --> A[React App]
+    A --> US[(public.users)]
+    A --> LE[(public.leave_entries)]
+    A --> EF[Read-only Edge Function]
+    EF --> GS[Google Sheets]
+```
+
+### Access Flow
+
+```mermaid
+sequenceDiagram
+    participant M as Member
+    participant App as React App
+    participant Auth as Supabase Auth
+    participant DB as public.users
+
+    M->>App: Click Continue with Google
+    App->>Auth: signInWithOAuth(google)
+    Auth-->>App: Authenticated session
+    App->>DB: Lookup user by email
+    DB-->>App: Matching active user row
+    App-->>M: Grant or deny access
+```
+
+### Data Model
+
+```mermaid
+erDiagram
+    users ||--o{ leave_entries : has
+
+    users {
+        SMALLINT id PK
+        TEXT email
+        TEXT first_name
+        TEXT last_name
+        TEXT role
+        BOOLEAN boc
+        BOOLEAN is_active
+        TIMESTAMPTZ created_at
+    }
+
+    leave_entries {
+        UUID id PK
+        SMALLINT user_id FK
+        TEXT member_name
+        DATE start_date
+        DATE end_date
+        TIMESTAMPTZ created_at
+    }
+```
+
+## Technology Stack
+
+### Frontend
+
+- React 19
+- TypeScript
+- Vite
+- Tailwind CSS v4
+
+### Backend Services
+
 - Supabase Auth for Google login
-- Existing Supabase `users` table for access control
+- Supabase Postgres for application data
+- Supabase Edge Functions for read-only Google Sheets access
 
-## Principle
+### Deployment
 
-Keep the app small.
+- Vercel for frontend hosting
+- Supabase for auth, database, and functions
 
-- No custom auth server
-- No complex routing yet
-- No Tailwind yet
-- One clear gate: Google sign-in, then check `users`
+## Repository Structure
 
-Tailwind can come later if we genuinely need a design system. Right now, plain CSS keeps the codebase smaller and easier to reason about.
+```text
+src/
+  components/
+    AccessPanel.tsx
+    CalendarPage.tsx
+    ExpensesPage.tsx
+    Footer.tsx
+    Header.tsx
+    HomePage.tsx
+    LoadingScreen.tsx
+  lib/
+    leave.ts
+    supabase.ts
+  App.tsx
+  index.css
+  main.tsx
+```
 
-## How Access Works
+## Core Features
 
-1. Member clicks `Continue with Google`
-2. Supabase handles Google OAuth
-3. App receives the signed-in session
-4. App checks `public.users` for the signed-in email
-5. Access is granted only if:
-   - the email exists
-   - `is_active = true`
+### 1. Authentication
 
-## Required Environment Variables
+Members sign in using Google through Supabase Auth.
 
-Create `.env` from `.env.example`.
+The app then checks the existing `public.users` table and only allows access when:
+
+- the email exists in `public.users`
+- `is_active = true`
+
+This avoids the need for a custom auth backend while keeping membership control in your own database.
+
+### 2. Members-Only Navigation
+
+After approval, members see a small portal shell with:
+
+- header navigation
+- member name and role in the header
+- sign-out action
+- page-aware URL paths
+
+Current paths:
+
+- `/`
+- `/calendar`
+- `/expenses`
+
+### 3. Leave Calendar
+
+The leave calendar is now backed by Supabase, not Google Sheets.
+
+It supports:
+
+- full leave register loading from `public.leave_entries`
+- month view with quiet daily counts
+- selected-day detail panel
+- upcoming leave across the club
+- add leave
+- delete leave
+- current member leave and leave history panels
+
+### 4. Read-Only Google Sheets Integration
+
+Google Sheets is no longer used as the write source for leave.
+
+That was intentionally retired because a spreadsheet is not a reliable transactional store for app CRUD.
+
+The remaining strategy is:
+
+- Supabase for owned application data
+- Google Sheets only for read-only integrations where useful
+
+## Database
+
+### Existing `public.users` Table
+
+The app assumes the `public.users` table already exists.
+
+Current expected shape:
+
+| column | type | purpose |
+| --- | --- | --- |
+| `id` | `int2` | internal member id |
+| `email` | `text` | used for membership lookup after Google sign-in |
+| `first_name` | `text` | display |
+| `last_name` | `text` | display |
+| `role` | `text` | display |
+| `boc` | `boolean` | special permission flag |
+| `is_active` | `boolean` | access gate |
+| `created_at` | `timestamptz` | audit metadata |
+
+### `public.leave_entries` Table
+
+Current app code expects the following schema:
+
+```sql
+create extension if not exists pgcrypto;
+
+create table if not exists public.leave_entries (
+  id uuid primary key default gen_random_uuid(),
+  user_id int2 not null references public.users(id) on delete cascade,
+  member_name text not null,
+  start_date date not null,
+  end_date date not null,
+  created_at timestamptz not null default now(),
+  constraint leave_entries_date_order check (start_date <= end_date)
+);
+```
+
+### Minimal RLS Policies For Current Leave Feature
+
+The current frontend code works with this lean policy set:
+
+```sql
+alter table public.leave_entries enable row level security;
+
+create policy "leave_entries_read"
+on public.leave_entries
+for select
+to authenticated
+using (true);
+
+create policy "leave_entries_insert"
+on public.leave_entries
+for insert
+to authenticated
+with check (true);
+
+create policy "leave_entries_delete"
+on public.leave_entries
+for delete
+to authenticated
+using (true);
+```
+
+This is intentionally simple for initial rollout.
+
+A later hardening step would restrict insert/delete to a member's own `user_id`.
+
+### Seed Existing Leave Data
+
+If you are migrating the existing club leave from Sheets into Supabase, this works against the current schema:
+
+```sql
+insert into public.leave_entries (user_id, member_name, start_date, end_date)
+values
+  (1, 'Patrick Montgomery', '2025-12-24', '2026-01-03'),
+  (1, 'Patrick Montgomery', '2025-07-08', '2025-07-11'),
+  (4, 'Daniel Corrigan', '2025-07-08', '2025-07-12'),
+  (4, 'Daniel Corrigan', '2025-10-17', '2025-10-17'),
+  (4, 'Daniel Corrigan', '2025-11-20', '2025-11-22'),
+  (3, 'Callum Forsyth', '2025-08-09', '2025-08-12'),
+  (3, 'Callum Forsyth', '2025-08-29', '2025-08-29'),
+  (3, 'Callum Forsyth', '2025-10-04', '2025-10-05'),
+  (3, 'Callum Forsyth', '2025-10-11', '2025-10-19'),
+  (3, 'Callum Forsyth', '2025-11-20', '2025-11-23'),
+  (3, 'Callum Forsyth', '2025-12-02', '2025-12-04'),
+  (3, 'Callum Forsyth', '2025-12-20', '2025-12-31'),
+  (3, 'Callum Forsyth', '2026-01-17', '2026-01-18'),
+  (3, 'Callum Forsyth', '2026-02-23', '2026-03-08'),
+  (3, 'Callum Forsyth', '2026-06-19', '2026-06-21'),
+  (3, 'Callum Forsyth', '2026-07-02', '2026-07-06'),
+  (3, 'Callum Forsyth', '2026-07-09', '2026-07-12'),
+  (2, 'Andrew Corlett', '2025-12-18', '2026-02-06'),
+  (2, 'Andrew Corlett', '2026-03-16', '2026-04-30'),
+  (3, 'Callum Forsyth', '2026-02-14', '2026-02-22'),
+  (3, 'Callum Forsyth', '2026-04-04', '2026-04-19'),
+  (1, 'Patrick Montgomery', '2026-04-17', '2026-04-19'),
+  (1, 'Patrick Montgomery', '2026-05-01', '2026-05-03'),
+  (1, 'Patrick Montgomery', '2026-04-22', '2026-04-23');
+```
+
+## Environment Variables
+
+This project expects a local `.env` file with:
 
 ```bash
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-## Supabase Setup
-
-### 1. Existing `users` table
-
-The app assumes your `users` table already exists with this shape:
-
-| column | type | notes |
-| --- | --- | --- |
-| id | bigint | identity primary key |
-| email | text | unique, required |
-| first_name | text | optional |
-| last_name | text | optional |
-| role | text | optional |
-| boc | boolean | board of command flag |
-| is_active | boolean | access gate |
-| created_at | timestamptz | defaults to now |
-
-### 2. Add your Google OAuth provider in Supabase
-
-In Supabase:
-
-- Go to `Authentication` -> `Providers` -> `Google`
-- Enable Google
-- Paste your Google OAuth `Client ID`
-- Paste your Google OAuth `Client Secret`
-
-The client ID you shared is only half of what Supabase needs. You also need the matching client secret from Google Cloud.
-
-### 3. Configure redirect URLs
-
-In Supabase Auth URL settings, add:
-
-- `http://localhost:5173`
-- your future production URL, for example `https://your-app.vercel.app`
-
-In Google Cloud, add the same app URL(s) where appropriate, plus the Supabase callback URL shown in the Google provider setup screen.
-
-## What You Need From Google
-
-You asked whether the client ID is enough.
-
-You need:
-
-- Google OAuth Client ID
-- Google OAuth Client Secret
-- Supabase project URL
-- Supabase anon key
-
-You do not need to put the Google client ID directly in the React app when using Supabase Auth this way. Supabase manages the OAuth exchange.
+These are consumed in [src/lib/supabase.ts](/Users/patrickmontgomery/Documents/Main%20Code/errolian-club/src/lib/supabase.ts).
 
 ## Local Development
 
+Install dependencies:
+
 ```bash
 npm install
+```
+
+Start the development server:
+
+```bash
 npm run dev
 ```
 
-## Deploying Cheaply
+Create a production build locally:
 
-Vercel is a sensible first choice.
+```bash
+npm run build
+```
 
-Simple deployment shape:
+Preview the production build:
 
-1. Push repo to GitHub
-2. Import project into Vercel
-3. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
-4. Add your Vercel URL to Supabase redirect URLs
-5. Add the same production URL to Google OAuth settings if needed
+```bash
+npm run preview
+```
 
-That keeps hosting simple and cheap while Supabase handles auth.
+## Authentication Setup
 
-## Current App Behaviour
+### Google Provider In Supabase
 
-- Signed-out users see a Google sign-in screen
-- Signed-in users are checked against `users`
-- Approved members see the app shell
-- Unknown or inactive users are denied
+In Supabase:
 
-## Google Sheets
+1. Go to `Authentication` → `Providers` → `Google`
+2. Enable Google
+3. Add your Google OAuth client ID
+4. Add your Google OAuth client secret
 
-Your edge function approach is still fine for later, but it is not the first thing to solve.
+### URL Configuration
 
-First milestone:
+In Supabase Auth URL settings, include:
 
-- secure sign-in
-- membership check
-- working shell
+- `http://localhost:5173/**`
+- `https://your-project.vercel.app/**`
 
-Then we can connect the rest of the app behind that gate.
+If you use preview deployments on Vercel, also add the appropriate preview pattern.
+
+## Deployment
+
+### Vercel
+
+Recommended path:
+
+1. Push the repository to GitHub
+2. Import the project into Vercel
+3. Add the required environment variables in Vercel
+4. Deploy
+5. Add the Vercel URL to Supabase Auth redirect URLs
+
+### Why Vercel
+
+Vercel is a good fit here because:
+
+- Vite is supported directly
+- frontend deployment is very fast
+- the free tier is enough for this stage
+- Supabase continues to own auth and data
+
+## Operational Approach Going Forward
+
+The current architectural boundary is intentional:
+
+### Use Supabase for
+
+- member access
+- leave entries
+- expenses
+- any user-generated or application-owned data
+
+### Use Google Sheets for
+
+- reference material
+- shared reporting
+- imported read-only operational data
+
+That separation keeps the app reliable without adding unnecessary backend complexity.
+
+## Current Limitations
+
+The current code is deliberately small, which means some follow-up work is still sensible:
+
+- leave policies can be tightened so users can only create and delete their own rows
+- `member_name` in `leave_entries` is currently duplicated for convenience and can be normalised later
+- `Expenses` is still a stub page
+- broader admin workflows are still to come
+
+## Quality Bar
+
+This repository is trying to stay on the right side of both extremes:
+
+- not overbuilt
+- not improvised
+
+The goal is a codebase that a small technical team can operate confidently, extend deliberately, and deploy cheaply.
+
+## Commands
+
+```bash
+npm run dev
+npm run build
+npm run preview
+npm run lint
+```
+
+## License
+
+Private project.

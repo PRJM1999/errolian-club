@@ -39,8 +39,7 @@ export function HomePage({ member }: HomePageProps) {
           <p className="text-[0.72rem] uppercase tracking-[0.24em] text-[#8a6a2f]">Next</p>
           <h2 className="mt-3 text-2xl tracking-[-0.04em] text-[#13211b]">Upcoming dates</h2>
           <p className="mt-3 leading-7">
-            The calendar section can hold formal dinners, committee meetings, rehearsals, or
-            any other key club engagements.
+            Tried to keep everything on google sheets for leave but just did not like it.
           </p>
         </article>
 
@@ -48,8 +47,7 @@ export function HomePage({ member }: HomePageProps) {
           <p className="text-[0.72rem] uppercase tracking-[0.24em] text-[#8a6a2f]">Practical</p>
           <h2 className="mt-3 text-2xl tracking-[-0.04em] text-[#13211b]">Expenses</h2>
           <p className="mt-3 leading-7">
-            Members can submit expenses cleanly and keep the finance side straightforward and
-            well-documented.
+            Get Andy's code in for the expenses soon.
           </p>
         </article>
       </div>
