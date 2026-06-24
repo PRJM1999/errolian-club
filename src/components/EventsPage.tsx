@@ -624,8 +624,8 @@ export function EventsPage({ memberId }: EventsPageProps) {
       </section>
 
       {isCreating ? (
-        <div className="fixed inset-0 z-[2000] grid place-items-end bg-black/55 p-3 sm:place-items-center">
-          <section className="max-h-[94vh] w-full max-w-2xl overflow-y-auto rounded-[1.25rem] border border-[#d6c8ad] bg-[#f4eee4] p-5 text-[#13211b] shadow-[0_30px_80px_rgba(4,9,8,0.34)]">
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center overflow-y-auto bg-black/55 p-3 sm:p-6">
+          <section className="max-h-[calc(100vh-1.5rem)] w-full max-w-2xl overflow-y-auto rounded-[1.25rem] border border-[#d6c8ad] bg-[#f4eee4] p-5 text-[#13211b] shadow-[0_30px_80px_rgba(4,9,8,0.34)] sm:max-h-[calc(100vh-3rem)]">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[0.72rem] uppercase tracking-[0.24em] text-[#8a6a2f]">New event</p>
@@ -741,8 +741,8 @@ export function EventsPage({ memberId }: EventsPageProps) {
       ) : null}
 
       {selectedLocationSummary && activeEvent ? (
-        <div className="fixed inset-0 z-[2000] grid place-items-end bg-black/55 p-3 sm:place-items-center">
-          <section className="max-h-[94vh] w-full max-w-xl overflow-y-auto rounded-[1.25rem] border border-[#d6c8ad] bg-[#f4eee4] p-5 text-[#13211b] shadow-[0_30px_80px_rgba(4,9,8,0.34)]">
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center overflow-y-auto bg-black/55 p-3 sm:p-6">
+          <section className="max-h-[calc(100vh-1.5rem)] w-full max-w-xl overflow-y-auto rounded-[1.25rem] border border-[#d6c8ad] bg-[#f4eee4] p-5 text-[#13211b] shadow-[0_30px_80px_rgba(4,9,8,0.34)] sm:max-h-[calc(100vh-3rem)]">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[0.72rem] uppercase tracking-[0.24em] text-[#8a6a2f]">

@@ -39,13 +39,20 @@ export function Header({
     <header className="border-b border-white/10 bg-[#101b16]/80 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-5 py-5 sm:px-8">
         <div className="flex items-center justify-between gap-4">
-          <div className="flex flex-col">
-            <span className="text-[0.7rem] uppercase tracking-[0.32em] text-[#d6bd77]">
-              Private Members Club
-            </span>
-            <span className="text-2xl tracking-[-0.04em] text-stone-50 sm:text-3xl">
-              Errolian Club
-            </span>
+          <div className="flex items-center gap-3">
+            <img
+              alt=""
+              className="size-12 shrink-0 rounded-full opacity-90 sm:size-14"
+              src="/brand/icon-192.png"
+            />
+            <div className="flex flex-col">
+              <span className="text-[0.68rem] uppercase tracking-[0.28em] text-[#d6bd77]">
+                Est. 2025
+              </span>
+              <span className="text-2xl tracking-[-0.04em] text-stone-50 sm:text-3xl">
+                Errolian Club
+              </span>
+            </div>
           </div>
 
           {isSignedIn ? (
