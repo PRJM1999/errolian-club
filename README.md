@@ -7,6 +7,7 @@ The project is deliberately simple in structure but production-minded in approac
 - Google sign-in through Supabase Auth
 - access controlled by the existing `public.users` table
 - leave management stored in Supabase Postgres
+- event register stored in Supabase Postgres
 - Google Sheets retained only for read-only use where needed
 - fast deployment via Vercel
 
@@ -18,7 +19,8 @@ Once signed in, members enter a lightweight portal with three core areas:
 
 - `Home`
 - `Calendar`
-- `Expenses`
+- `Events`
+- `Treasury`
 
 At the moment, the `Calendar` page is the most complete feature. It reads leave entries from Supabase, renders a month view, shows upcoming leave across the club, and allows members to add and delete their own leave entries.
 
@@ -124,7 +126,6 @@ src/
   components/
     AccessPanel.tsx
     CalendarPage.tsx
-    ExpensesPage.tsx
     Footer.tsx
     Header.tsx
     HomePage.tsx
@@ -163,7 +164,8 @@ Current paths:
 
 - `/`
 - `/calendar`
-- `/expenses`
+- `/events`
+- `/treasury`
 
 ### 3. Leave Calendar
 
@@ -376,7 +378,6 @@ The current architectural boundary is intentional:
 
 - member access
 - leave entries
-- expenses
 - any user-generated or application-owned data
 
 ### Use Google Sheets for
@@ -393,7 +394,6 @@ The current code is deliberately small, which means some follow-up work is still
 
 - leave policies can be tightened so users can only create and delete their own rows
 - `member_name` in `leave_entries` is currently duplicated for convenience and can be normalised later
-- `Expenses` is still a stub page
 - broader admin workflows are still to come
 
 ## Quality Bar

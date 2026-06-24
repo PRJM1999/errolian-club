@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { AccessPanel } from './components/AccessPanel'
 import { CalendarPage } from './components/CalendarPage'
-import { ExpensesPage } from './components/ExpensesPage'
+import { EventsPage } from './components/EventsPage'
 import { Footer } from './components/Footer'
 import { Header } from './components/Header'
 import { HomePage } from './components/HomePage'
@@ -10,7 +10,7 @@ import { LoadingScreen } from './components/LoadingScreen'
 import { supabase } from './lib/supabase'
 
 type AccessState = 'loading' | 'signed_out' | 'checking' | 'approved' | 'denied' | 'error'
-type NavKey = 'home' | 'calendar' | 'expenses'
+type NavKey = 'home' | 'calendar' | 'events' | 'treasury'
 
 type Member = {
   id: number | string
@@ -21,14 +21,23 @@ type Member = {
 
 const pathToPage = (pathname: string): NavKey => {
   if (pathname === '/calendar') return 'calendar'
-  if (pathname === '/expenses') return 'expenses'
+  if (pathname === '/events') return 'events'
+  if (pathname === '/treasury') return 'treasury'
   return 'home'
 }
 
 const pageToPath = (page: NavKey) => {
   if (page === 'calendar') return '/calendar'
-  if (page === 'expenses') return '/expenses'
+  if (page === 'events') return '/events'
+  if (page === 'treasury') return '/treasury'
   return '/'
+}
+
+const pendingPages: Record<Exclude<NavKey, 'home' | 'calendar' | 'events'>, { eyebrow: string; title: string }> = {
+  treasury: {
+    eyebrow: 'Treasury',
+    title: 'More treasury information coming soon.',
+  },
 }
 
 export default function App() {
@@ -130,18 +139,34 @@ export default function App() {
     if (activePage === 'calendar') {
       return <CalendarPage memberId={member?.id ? String(member.id) : ''} memberName={memberName} />
     }
-    if (activePage === 'expenses') return <ExpensesPage />
-    return <HomePage member={member} />
+    if (activePage === 'events') {
+      return <EventsPage memberId={member?.id ? String(member.id) : ''} />
+    }
+    if (activePage === 'treasury') {
+      const page = pendingPages[activePage]
+
+      return (
+        <section className="grid gap-4 rounded-[1.25rem] border border-white/10 bg-[#17231d] p-6 shadow-[0_24px_60px_rgba(4,9,8,0.18)] md:p-8">
+          <p className="text-[0.72rem] uppercase tracking-[0.28em] text-[#d6bd77]">
+            {page.eyebrow}
+          </p>
+          <h1 className="max-w-[14ch] text-4xl leading-none tracking-[-0.06em] text-stone-50 md:text-6xl">
+            {page.title}
+          </h1>
+        </section>
+      )
+    }
+    return <HomePage member={member} onOpenEvents={() => navigate('events')} />
   }
 
   const isSignedIn = accessState === 'approved'
   const isAuthLoading = accessState === 'loading' || accessState === 'checking'
 
   return (
-    <div className="min-h-screen bg-[#0f1714] text-stone-100">
+    <div className="min-h-screen bg-[#08120f] text-stone-100">
       <div className="relative isolate min-h-screen overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(154,117,46,0.22),transparent_28%),linear-gradient(180deg,#13201a_0%,#0f1714_55%,#efe6d7_55%,#f4ecdf_100%)]" />
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-200/50 to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_28%_8%,rgba(190,152,70,0.16),transparent_30%),linear-gradient(180deg,#101b16_0%,#08120f_46%,#07100d_100%)]" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#d6bd77]/50 to-transparent" />
 
         <div className="relative flex min-h-screen flex-col">
           <Header
@@ -153,15 +178,15 @@ export default function App() {
             role={member?.role}
           />
 
-          <main className="mx-auto flex w-full max-w-6xl flex-1 px-5 py-10 sm:px-8 sm:py-14">
+          <main className="mx-auto flex w-full max-w-6xl flex-1 px-5 py-7 sm:px-8 sm:py-10">
             {isAuthLoading ? (
               <LoadingScreen label="Checking access" />
             ) : isSignedIn ? (
               <div className="w-full">{renderPage()}</div>
             ) : (
               <div className="grid w-full items-start gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
-                <section className="grid content-start gap-6 pt-2">
-                  <div className="inline-flex w-fit rounded-full border border-amber-200/15 bg-white/5 px-4 py-2 text-[0.72rem] uppercase tracking-[0.2em] text-amber-100/80">
+                <section className="grid content-start gap-7 pt-2">
+                  <div className="inline-flex w-fit border-y border-[#d6bd77]/35 px-1 py-2 text-[0.72rem] uppercase tracking-[0.28em] text-[#d6bd77]">
                     Established Standard
                   </div>
                   <div className="grid gap-5">
@@ -173,7 +198,7 @@ export default function App() {
                       approved accounts in your existing Supabase `users` table are admitted.
                     </p>
                   </div>
-                  <div className="grid gap-3 text-sm leading-7 text-stone-300/90">
+                  <div className="grid gap-3 border-l border-[#d6bd77]/30 pl-5 text-sm leading-7 text-stone-400">
                     <p>Google authentication through Supabase.</p>
                     <p>Access controlled by your existing members table.</p>
                     <p>Responsive layout for desktop and mobile.</p>

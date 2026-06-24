@@ -1,4 +1,4 @@
-type NavKey = 'home' | 'calendar' | 'expenses'
+type NavKey = 'home' | 'calendar' | 'events' | 'treasury'
 
 type HeaderProps = {
   isSignedIn: boolean
@@ -12,7 +12,8 @@ type HeaderProps = {
 const links: Array<{ key: NavKey; label: string }> = [
   { key: 'home', label: 'Home' },
   { key: 'calendar', label: 'Calendar' },
-  { key: 'expenses', label: 'Expenses' },
+  { key: 'events', label: 'Events' },
+  { key: 'treasury', label: 'Treasury' },
 ]
 
 export function Header({
@@ -24,10 +25,10 @@ export function Header({
   onSignOut,
 }: HeaderProps) {
   return (
-    <header className="border-b border-white/10">
+    <header className="border-b border-white/10 bg-[#101b16]/80 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-5 py-5 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-col">
-          <span className="text-[0.7rem] uppercase tracking-[0.28em] text-amber-200/70">
+          <span className="text-[0.7rem] uppercase tracking-[0.32em] text-[#d6bd77]">
             Private Members Club
           </span>
           <span className="text-2xl tracking-[-0.04em] text-stone-50 sm:text-3xl">
@@ -46,7 +47,7 @@ export function Header({
                     key={link.key}
                     className={`rounded-full px-4 py-2 text-sm tracking-[0.08em] transition ${
                       isActive
-                        ? 'bg-amber-200 text-[#13211b]'
+                        ? 'bg-[#d6bd77] text-[#101b16]'
                         : 'border border-white/10 bg-white/5 text-stone-200 hover:bg-white/10'
                     }`}
                     onClick={() => onNavigate?.(link.key)}

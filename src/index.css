@@ -24,3 +24,47 @@ body {
 button {
   cursor: pointer;
 }
+
+.events-map .leaflet-pane,
+.events-map .leaflet-top,
+.events-map .leaflet-bottom {
+  z-index: 1;
+}
+
+.events-map .leaflet-control {
+  border: 1px solid rgba(214, 189, 119, 0.22);
+  background: rgba(16, 27, 22, 0.86);
+  color: #f5efe5;
+}
+
+.events-map .leaflet-control a {
+  background: rgba(16, 27, 22, 0.86);
+  color: #f5efe5;
+}
+
+.events-map .leaflet-tooltip {
+  border: 1px solid #d6c8ad;
+  border-radius: 8px;
+  background: #f4eee4;
+  color: #13211b;
+  box-shadow: 0 12px 30px rgba(4, 9, 8, 0.18);
+}
+
+.event-timeline-scroll {
+  scrollbar-color: rgba(214, 189, 119, 0.42) rgba(255, 255, 255, 0.05);
+  scrollbar-width: thin;
+}
+
+.event-timeline-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.event-timeline-scroll::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.event-timeline-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(214, 189, 119, 0.42);
+}

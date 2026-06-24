@@ -33,9 +33,16 @@ export function AccessPanel({
   const memberName = [member?.first_name, member?.last_name].filter(Boolean).join(' ') || 'Member'
 
   return (
-    <section className="w-full max-w-xl rounded-[2rem] border border-stone-900/10 bg-[rgba(251,247,239,0.88)] p-6 shadow-[0_30px_80px_rgba(12,18,15,0.16)] backdrop-blur md:p-8">
+    <section className="w-full max-w-xl rounded-[1.25rem] border border-[#d6c8ad] bg-[#f4eee4] p-6 text-[#13211b] shadow-[0_30px_80px_rgba(4,9,8,0.24)] md:p-8">
       <div className="grid gap-8">
         <div className="grid gap-4">
+          <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-sm border border-[#d6c8ad] bg-[#fbf8f2] p-3">
+            <img
+              alt="Errolian Club crest"
+              className="h-full w-full object-contain mix-blend-multiply"
+              src="/brand/logo.png"
+            />
+          </div>
           <p className="text-[0.72rem] uppercase tracking-[0.3em] text-[#8a6a2f]">
             Members Access
           </p>
@@ -49,7 +56,7 @@ export function AccessPanel({
         </div>
 
         <div
-          className={`grid gap-3 rounded-[1.5rem] border ${panelTone[accessState]} bg-white/70 p-5 text-stone-700`}
+          className={`grid gap-3 rounded-[1rem] border ${panelTone[accessState]} bg-white/70 p-5 text-stone-700`}
         >
           {(accessState === 'loading' || accessState === 'checking') && (
             <>

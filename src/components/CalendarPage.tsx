@@ -230,26 +230,36 @@ export function CalendarPage({ memberId, memberName }: CalendarPageProps) {
         </div>
       ) : null}
 
-      <div className="rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-[0_24px_60px_rgba(4,9,8,0.18)] md:p-8">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <div className="rounded-[1.25rem] border border-white/10 bg-white/5 px-5 py-4 shadow-[0_18px_42px_rgba(4,9,8,0.16)] md:px-6">
+        <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-[0.72rem] uppercase tracking-[0.28em] text-amber-100/70">Calendar</p>
-            <h1 className="mt-4 text-4xl leading-none tracking-[-0.06em] text-stone-50 md:text-6xl">
+            <h1 className="mt-2 text-3xl leading-none tracking-[-0.06em] text-stone-50 md:text-4xl">
               Who is on leave.
             </h1>
-            <p className="mt-4 max-w-2xl text-base leading-8 text-stone-300">
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-300">
               The calendar keeps the month view quiet. Click any day with leave to see exactly who
               is away, while the register below keeps the wider picture visible.
             </p>
           </div>
 
           <button
-            className="w-full rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm uppercase tracking-[0.16em] text-stone-200 transition hover:bg-white/10 sm:w-auto"
+            aria-label="Refresh leave"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-stone-200 transition hover:bg-white/10"
             disabled={loading || saving}
             onClick={() => void loadLeave('Refreshing leave')}
+            title="Refresh leave"
             type="button"
           >
-            Refresh Leave
+            <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
+              <path
+                d="M20 7v5h-5M4 17v-5h5M18 12a6 6 0 0 0-10.24-4.24L4 11.5M6 12a6 6 0 0 0 10.24 4.24L20 12.5"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.8"
+              />
+            </svg>
           </button>
         </div>
       </div>
@@ -303,7 +313,7 @@ export function CalendarPage({ memberId, memberName }: CalendarPageProps) {
               {days.map((day) => (
                 <button
                   key={day.key}
-                  className={`min-h-24 rounded-2xl border p-3 text-left transition ${
+                  className={`min-h-16 rounded-2xl border p-2 text-left transition sm:min-h-24 sm:p-3 ${
                     day.isCurrentMonth
                       ? day.isSelected
                         ? 'border-[#8a6a2f] bg-[#13211b] text-stone-50'
@@ -324,7 +334,13 @@ export function CalendarPage({ memberId, memberName }: CalendarPageProps) {
                   <div className="flex h-full flex-col justify-between gap-3">
                     <span className="text-sm">{day.label}</span>
                     {day.leaveCount ? (
-                      <span className="text-xs leading-5">{day.leaveCount} away</span>
+                      <span
+                        aria-label={`${day.leaveCount} away`}
+                        className="flex h-6 w-6 items-center justify-center rounded-full bg-[#13211b]/10 text-xs leading-none sm:h-auto sm:w-auto sm:justify-start sm:rounded-none sm:bg-transparent sm:leading-5"
+                      >
+                        <span className="sm:hidden">{day.leaveCount}</span>
+                        <span className="hidden sm:inline">{day.leaveCount} away</span>
+                      </span>
                     ) : null}
                   </div>
                 </button>
